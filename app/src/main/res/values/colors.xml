@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Visual Design Tokens specified in prompt -->
+    <color name="backdrop">#050506</color>
+    <color name="sheet_surface">#141416</color>
+    <color name="input_surface">#1C1C20</color>
+    <color name="accent_coral">#FF5A36</color>
+    <color name="accent_cyan">#34E4D0</color>
+    <color name="text_primary">#F4F4F6</color>
+    <color name="text_secondary">#8E8E93</color>
+    <color name="divider_subtle">#26262B</color>
+</resources>

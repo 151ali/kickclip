@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme (Material3 Dark) -->
+    <style name="Theme.Kickclip" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@color/backdrop</item>
+        <item name="android:navigationBarColor">@color/backdrop</item>
+        <item name="android:windowBackground">@color/backdrop</item>
+    </style>
+
+    <!--
+      Translucent Dialog theme for ShareActivity:
+      - Translucent window background allows calling app (TikTok) to remain visible underneath
+      - Window dim adds contrast behind the bottom sheet
+      - No window title or action bar
+      - Touching outside will be handled by the Compose backdrop or Activity touch event
+    -->
+    <style name="Theme.Kickclip.Dialog" parent="android:Theme.Material.Dialog.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.65</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/sheet_surface</item>
+    </style>
+</resources>

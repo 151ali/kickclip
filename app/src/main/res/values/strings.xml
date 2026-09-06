@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Kickclip</string>
+    <string name="share_target_title">Kickclip</string>
+    <string name="send_to_kickclip">SEND TO KICKCLIP</string>
+    <string name="add_a_note">ADD A NOTE</string>
+    <string name="note_placeholder">What\'s the highlight here?</string>
+    <string name="cancel">Cancel</string>
+    <string name="send">Send</string>
+    <string name="sending">Sending…</string>
+    <string name="sent">Sent ✓</string>
+    <string name="video_badge">VIDEO</string>
+    <string name="profile_badge">PROFILE</string>
+    <string name="parsing_link">Resolving TikTok link…</string>
+    <string name="error_invalid_link">Unable to parse TikTok link. Please share a valid vm.tiktok.com link.</string>
+</resources>
