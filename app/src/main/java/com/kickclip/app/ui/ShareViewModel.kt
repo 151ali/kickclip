@@ -3,8 +3,12 @@ package com.kickclip.app.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kickclip.app.data.ClipInsert
+import com.kickclip.app.data.SupabaseClientProvider
+import com.kickclip.app.data.insertClip
 import com.kickclip.app.model.SharedTikTok
 import com.kickclip.app.parser.TikTokLinkParser
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +35,7 @@ sealed class SendState {
     object Idle : SendState()
     object Sending : SendState()
     object Sent : SendState()
+    data class Error(val message: String) : SendState()
 }
 
 /**
@@ -97,15 +102,13 @@ class ShareViewModel(
 
     /**
      * Executes the send action.
-     * Transitions: "Send" -> "Sending…" -> "Sent ✓" -> dismiss after ~700ms.
-     *
-     * PRODUCTION SWAP POINT:
-     * Replace this simulated delay and Log.d call with a Retrofit / Ktor / Room client
-     * to persist or broadcast { username, videoId, note }.
+     * Transitions: "Send" -> "Sending…" -> "Sent ✓" -> dismiss after ~700ms
+     * (or -> "Error" on failure, leaving the sheet open so the user can retry).
      */
     fun onSendClicked() {
         val currentParsed = (_parsingState.value as? ParsingState.Parsed)?.data ?: return
-        if (_sendState.value != SendState.Idle) return
+        // Allow retrying from Error, but not while already Sending/Sent.
+        if (_sendState.value is SendState.Sending || _sendState.value is SendState.Sent) return
 
         viewModelScope.launch {
             _sendState.value = SendState.Sending
@@ -117,21 +120,36 @@ class ShareViewModel(
             val videoId = (currentParsed as? SharedTikTok.Video)?.videoId
             val noteContent = _note.value.trim()
 
-            // -------------------------------------------------------------
-            // Simulated network delay (900ms) as specified in requirements
-            // -------------------------------------------------------------
-            delay(900)
+            try {
+                SupabaseClientProvider.ensureSignedIn()
+                val userId = SupabaseClientProvider.client.auth.currentUserOrNull()?.id
+                    ?: error("No Supabase session after sign-in")
 
-            // Log final payload
-            Log.d(TAG, "Successfully submitted Kickclip payload:")
-            Log.d(TAG, "Payload -> username: $username, videoId: $videoId, note: \"$noteContent\"")
+                insertClip(
+                    ClipInsert(
+                        userId = userId,
+                        username = username,
+                        videoId = videoId,
+                        note = noteContent
+                    )
+                )
 
-            // Transition to "Sent ✓"
-            _sendState.value = SendState.Sent
+                _sendState.value = SendState.Sent
+                delay(700)
+                _uiEvents.emit(UiEvent.DismissActivity)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to save clip to Supabase", e)
+                _sendState.value = SendState.Error(
+                    e.localizedMessage ?: "Failed to save clip. Check your connection and try again."
+                )
+            }
+        }
+    }
 
-            // Auto-dismiss the Activity after ~700ms
-            delay(700)
-            _uiEvents.emit(UiEvent.DismissActivity)
+    /** Lets the UI return to Idle after showing an error, so Send can be retried. */
+    fun onErrorAcknowledged() {
+        if (_sendState.value is SendState.Error) {
+            _sendState.value = SendState.Idle
         }
     }
 }

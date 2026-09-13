@@ -221,8 +221,9 @@ fun ShareBottomSheetContent(
                     )
                 }
 
-                // Send Button with 3 states: "Send" -> "Sending…" -> "Sent ✓"
-                val isSendEnabled = parsingState is ParsingState.Parsed && sendState == SendState.Idle
+                // Send Button with 3 states: "Send" -> "Sending…" -> "Sent ✓" (or "Retry" on error)
+                val isSendEnabled = parsingState is ParsingState.Parsed &&
+                    (sendState is SendState.Idle || sendState is SendState.Error)
 
                 Button(
                     onClick = onSend,
@@ -270,7 +271,32 @@ fun ShareBottomSheetContent(
                                 fontWeight = FontWeight.Bold
                             )
                         }
+                        is SendState.Error -> {
+                            Text(
+                                text = "Retry",
+                                style = Typography.labelLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
+                }
+            }
+
+            if (sendState is SendState.Error) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = TextError,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = sendState.message,
+                        style = Typography.bodyMedium,
+                        color = TextError
+                    )
                 }
             }
         }
