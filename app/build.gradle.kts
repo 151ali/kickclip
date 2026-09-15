@@ -18,6 +18,27 @@ val localProperties = Properties().apply {
     }
 }
 
+// Signing config: on CI these come from environment variables (populated from
+// GitHub Secrets in the workflow); locally they fall back to local.properties
+// so you don't have to export env vars by hand. If none are set, the release
+// signingConfig is simply left unset and assembleRelease produces an
+// unsigned APK instead of failing the build.
+fun signingProp(envName: String, propName: String): String? =
+    System.getenv(envName)?.takeIf { it.isNotBlank() }
+        ?: localProperties.getProperty(propName)?.takeIf { it.isNotBlank() }
+
+val releaseStoreFile = signingProp("KEYSTORE_PATH", "RELEASE_STORE_FILE")
+val releaseStorePassword = signingProp("KEYSTORE_PASSWORD", "RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = signingProp("KEY_ALIAS", "RELEASE_KEY_ALIAS")
+val releaseKeyPassword = signingProp("KEY_PASSWORD", "RELEASE_KEY_PASSWORD")
+
+val hasReleaseSigning = listOf(
+    releaseStoreFile,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+).all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.kickclip.app"
     compileSdk = 36
@@ -43,22 +64,29 @@ android {
         )
     }
 
-    buildTypes {
-        // release {
-        //     isMinifyEnabled = false
-        //     proguardFiles(
-        //         getDefaultProguardFile("proguard-android-optimize.txt"),
-        //         "proguard-rules.pro"
-        //     )
-        // }
-        release {
-        isMinifyEnabled = true
-        isShrinkResources = true
-        proguardFiles(
-            getDefaultProguardFile("proguard-android-optimize.txt"),
-            "proguard-rules.pro"
-        )
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
     }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
